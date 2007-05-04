@@ -27,7 +27,7 @@ function phone_help($section) {
 function phone_field_info() {
   return array(
     'fr_phone' => array('label' => t('French Phone Numbers')),
-    'ca_phone' => array('label' => t('North American Phone Numbers i.e. US & Canadian')),
+    'ca_phone' => array('label' => t('US & Canadian Phone Numbers')),
    );
 }
 
