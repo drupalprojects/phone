@@ -1,7 +1,7 @@
 <?php
 // $Id$
 
-// Copyright 2006 Thierry GUEGAN http://www.arvoriad.com 
+// Copyright 2007 Thierry GUEGAN http://www.arvoriad.com 
 
 /**
  * @file
@@ -59,12 +59,13 @@ function phone_field_settings($op, $field) {
     case 'database columns':
       if ($field['type'] == 'fr_phone'){ 
       	return array(
-      	  'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      	  'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => NULL, 'sortable' => TRUE),      	  
+      	  
       	);
       }
       if ($field['type'] == 'ca_phone'){ 
          return array(
-           'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      	  'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => NULL, 'sortable' => TRUE),      	  
           );
       }
       return $columns;
@@ -84,12 +85,6 @@ function phone_field_settings($op, $field) {
  */
 function phone_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
-    case 'view':
-      foreach ($items as $delta => $item) {
-        $items[$delta]['view'] = phone_field_formatter($field, $item, 'default', $node);
-      }
-      return theme('field', $node, $field, $items, $teaser, $page); 
-
     case 'validate':
       if (!empty($widget['size']) && (!is_numeric($widget['size']) || intval($widget['size']) != $widget['size'] || $widget['size'] <= 0)) {
         form_set_error('size', t('"Size" must be a positive integer.'));
@@ -105,18 +100,27 @@ function phone_field_formatter_info() {
    return array(
    	'default' => array(
    	'label' => 'Default',
-   	'field types' => array('ca_phone', 'fr_phone'),
+   	'field types' => array('fr_phone', 'ca_phone'),
     ),
   );
 }
+
 
 /**
 * Implementation of hook_field_formatter().
 **/
 function phone_field_formatter($field, $item, $formatter, $node) {
-  return check_plain($item['value']);
+  if (!isset($item['value'])) {
+    return '';
+  }
+  if ($field['text_processing']) {
+    $text = check_markup($item['value'], $item['format'], is_null($node) || isset($node->in_preview));
+  }
+  else {
+     $text = check_plain($item['value']);
+  }
+  return $text;
 }
-
 
 /**
  * Implementation of hook_widget_info().
@@ -204,10 +208,10 @@ function phone_widget($op, &$node, $field, &$node_field) {
 	    if ($item['value'] != '') 
 	    { 
               if ($field['type'] == 'fr_phone' && !valid_fr_phone_number($item['value'])) {
-                form_set_error($field['field_name'],t('"%value" is not a valid phone number<br>Phone numbers should only contains numbers and + and spaces',array('%value' => $item['value'])));
+                form_set_error($field['field_name'],t('"%value" is not a valid French phone number<br>French phone numbers should only contains numbers and spaces and be like 99 99 99 99 99', array('%value' => $item['value'])));
               }
               if ($field['type'] == 'ca_phone' && !valid_ca_phone_number($item['value'])) {
-                form_set_error($field['field_name'],t('"%value" is not a valid phone number<br>Phone numbers should only contains numbers and + and - and ( and ) and spaces',array('%value' => $item['value'])));
+                form_set_error($field['field_name'],t('"%value" is not a valid North American phone number<br>North American Phone numbers should only contains numbers and + and - and ( and ) and spaces and be like 999-999-9999. Please enter a valid ten-digit phone number with optional extension.', array('%value' => $item['value'])));
               }
             }
           }
@@ -219,9 +223,8 @@ function phone_widget($op, &$node, $field, &$node_field) {
 /**
  * Verification for Phone Numbers.  
  *
- * @param string $text
+ * @param string $phonenumber
  * @return boolean Returns boolean FALSE if the phone number is not valid. 
- * On success, returns a string containting the phone number with some formatting.
  */
 function valid_fr_phone_number($phonenumber) {
 
@@ -238,24 +241,35 @@ function valid_fr_phone_number($phonenumber) {
   }
 }  
 
+
+
+/**
+ * Verifies that $phonenumber is a valid ten-digit North American phone number
+ *
+ * @param string $phonenumber
+ * @return boolean Returns boolean FALSE if the phone number is not valid. 
+ */
+
 function valid_ca_phone_number($phonenumber) {
 
   $phonenumber = trim($phonenumber);
 
-  if (!preg_match("/^((\+)?(\d{1})[- ])?(([\(])?((\d){3,5})([\)])?[-])|(\d{3,5})(\d{5,8}){1}?$/i",$phonenumber)) { 
-  	return false; 
-  }
-  //right now just do a quick check ==> has to be improved 
-  //need to count how many numbers have been filled, ...
-  
-  //in case of US or Canadian phone numbers do the following testing extra 
-  //==>   ^((\+)?(\d{1})[-]?)?(([\(])?((\d){3,5})([\)])?[-])|(\d{3,5})(\d{5,8}){1}?$
-  //valid phone numbers +91-020-2344533,020-2344533.+91-(020)-2344533,-(020)-2344533
-  //not valid 5444474445
-  else 
-  {
-	return true;
-  }
+  // define regular expression
+  $regex = "/
+    \D*           # ignore non-digits
+    1?            # an optional 1
+    \D*           # optional separator 
+    [02-9]\d{2}   # area code (can't start with 1)
+    \D*           # optional separator
+    \d{3}         # 3-digit prefix
+    \D*           # optional separator
+    \d{4}         # 4-digit line number
+    \D*           # optional separator
+    \d*           # optional extension
+    \D*           # ignore trailing non-digits
+    /x";
+  // return true if valid, false otherwise
+  return (bool) preg_match($regex, $phonenumber); 
 } 
 
   	
@@ -284,22 +298,40 @@ function format_fr_phone_number($phonenumber, $countrycode) {
 }
 
 
-function format_ca_phone_number($phonenumber, $countrycode) {
+/**
+ * Convert a valid phonenumber into standard (444) 867-5309 x1234 format
+ * 
+ * @param
+ *  $phonenumber must be a valid ten-digit number (with optional extension)
+ */
+function format_ca_phone_number($phonenumber) {
 
-  $phonenumber = trim($phonenumber);
-
-   // do some formatting on the phone number 
-   //if doesn't start by '+' add it at the beginning and ins not empty
-   if (!preg_match("/^(\+){1}[0-9 \-]*$/i",$phonenumber) && !$phonenumber == '') 
-   {
-	$phonenumber = '+' . $phonenumber;
-   }
-   //if canadian or american phone number, add the country code at the beginning 
-   if (!preg_match("/^(\+){1}1[ -]*[0-9 \-]*$/i",$phonenumber) && !$phonenumber == '') 
-   {
-   	$phonenumber = str_replace("+", "+" . $countrycode . " ", $phonenumber);
-   }
-   return $phonenumber;
+  // define regular expression   
+  $regex = "/
+    ^\D*          # ignore non-digits
+    1?            # an optional 1
+    \D*           # optional separator 
+    ([2-9]\d{2})  # capture area code       
+    \D*           # optional separator
+    ([2-9]\d{2})  # capture 3-digit prefix
+    \D*           # optional separator
+    (\d{4})       # capture 4-digit line number                       
+    \D*           # optional separator
+    (\d*)         # capture optional extension                       
+    \D*$          # ignore trailing non-digits
+  /x"; 
+    
+  // get digits of phone number
+  preg_match($regex, $phonenumber, $matches);
+  
+  // construct ten-digit phone number
+  $phonenumber = $matches[1] . '-' . $matches[2] . '-' . $matches[3];
+  
+  if ($matches[1] != "1") {
+  	$phonenumber = "1" . " " . $phonenumber; 
+  }
+  
+  return $phonenumber;
 }
 
 
