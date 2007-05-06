@@ -5,8 +5,5 @@ version = "$Name$"
 package = CCK
 dependencies = content
 
-; Information added by drupal.org packaging script on 2007-01-19
-version = "5.x-1.x-dev"
-project = "phone"
 
 
