@@ -31,90 +31,47 @@ function phone_field_info() {
    );
 }
 
+
 /**
  * Implementation of hook_field_settings().
  */
 function phone_field_settings($op, $field) {
-  switch ($op) {    
-    case 'form':
-      $form = array();
-      $form['size'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Size of textfield'),
-        '#default_value' => isset($field['size']) ? $field['size'] : 20,
-        '#required' => FALSE,
-        '#description' => t('Size of textfield'),
-      );      
-      return $form;	
-	
-    case 'validate':
-      if ($field['size'] && !is_numeric($field['size'])) {
-        form_set_error('rows', t('"Size" must be a number.'));
-      }      
-      break;	
-
-    case 'save':
-      return array('size');
-      
+  switch ($op) {      
     case 'database columns':
       if ($field['type'] == 'fr_phone'){ 
-      	return array(
-      	  'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      	$columns = array(
+        	'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       	);
       }
       if ($field['type'] == 'ca_phone'){ 
-         return array(
-           'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+         $columns = array(
+            	'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
           );
       }
       return $columns;
-      
-    case 'filters':
-      return array(
-        'default' => array(
-          'operator' => 'views_handler_operator_like',
-          'handler' => 'views_handler_filter_like',
-        ),
-      );       
   }
 }
 
 /**
  * Implementation of hook_field().
  */
-function phone_field($op, &$node, $field, &$items, $teaser, $page) {
+function phone_field($op, &$node, $field, &$node_field, $teaser, $page) {
   switch ($op) {
     case 'view':
-      foreach ($items as $delta => $item) {
-        $items[$delta]['view'] = phone_field_formatter($field, $item, 'default', $node);
+      foreach ($node_field as $delta => $item) {
+        $node_field[$delta]['view'] = phone_field_view_item($field, $item);
       }
-      return theme('field', $node, $field, $items, $teaser, $page); 
-
-    case 'validate':
-      if (!empty($widget['size']) && (!is_numeric($widget['size']) || intval($widget['size']) != $widget['size'] || $widget['size'] <= 0)) {
-        form_set_error('size', t('"Size" must be a positive integer.'));
-      }
-      break; 
+      return theme('field', $node, $field, $node_field, $teaser, $page); 
   }
 }
- 
-/**
-* Implementation of hook_field_formatter_info()
-**/
-function phone_field_formatter_info() {
-   return array(
-   	'default' => array(
-   	'label' => 'Default',
-   	'field types' => array('ca_phone', 'fr_phone'),
-    ),
-  );
-}
 
 /**
-* Implementation of hook_field_formatter().
-**/
-function phone_field_formatter($field, $item, $formatter, $node) {
-  return check_plain($item['value']);
+ * Implementation of hook_field_view_item().
+ *
+ */
+function phone_field_view_item($field, $node_field_item) {
+    $phone =  check_plain($node_field_item['value']);
+    return $phone;
 }
 
 
@@ -124,11 +81,39 @@ function phone_field_formatter($field, $item, $formatter, $node) {
 function phone_widget_info() {
   return array(
     'phone' => array(
-      'label' => 'Text Field',
+      'label' => t('Textfield'),
       'field types' => array('fr_phone', 'ca_phone'),
     ),
   );
 }
+
+/**
+ * Implementation of hook_widget_settings().
+ */
+function phone_widget_settings($op, $widget) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $form['size'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Size'),
+        '#default_value' => isset($widget['size']) ? $widget['size'] : 20,
+        '#required' => FALSE,
+        '#description' => t('Size of textfield'),
+      );
+      return $form;
+
+    case 'validate':
+      if (!empty($widget['size']) && (!is_numeric($widget['size']) || intval($widget['size']) != $widget['size'] || $widget['size'] <= 0)) {
+        form_set_error('size', t('"Size" must be a positive integer.'));
+      }
+      break;
+
+    case 'save':
+      return array('size');
+  }
+}
+
 
 /**
  * Implementation of hook_widget().
@@ -137,45 +122,35 @@ function phone_widget($op, &$node, $field, &$node_field) {
   switch ($op) {   
     case 'form':
       $form = array();
-      
       $form[$field['field_name']] = array('#tree' => TRUE);
       
       if ($field['multiple']) {
         $form[$field['field_name']]['#type'] = 'fieldset';
-        $form[$field['field_name']]['#description'] = $field['widget']['description'];
-        $delta = 0;
-        foreach ($node_field as $data) {
-          if (isset($data['value'])) {
-            $form[$field['field_name']][$delta]['value'] = array(
-              '#type' => 'textfield',
-              '#title' => ($delta == 0) ? t($field['widget']['label']) : '',
-              '#default_value' => $data['value'],
-              '#required' => ($delta == 0) ? $field['required'] : FALSE,
-              '#maxlength' => 11,
-            );
-            $delta++;
-          }
-        }
-        foreach (range($delta, $delta + 2) as $delta) {
-          $form[$field['field_name']][$delta]['value'] = array(
+        $form[$field['field_name']]['#title'] = t($field['widget']['label']);
+        foreach (range(0,2) as $delta) {
+          $form[$field['field_name']][$delta]['fr_phone'] = array(
             '#type' => 'textfield',
-            '#title' => ($delta == 0) ? t($field['widget']['label']) : '',
-            '#default_value' => '',
-            '#required' => ($delta == 0) ? $field['required'] : FALSE,
-            '#maxlength' => 11,
+            '#title' => '',
+            '#default_value' => isset($node_field[$delta]['fr_phone']) ? $node_field[$delta]['fr_phone'] : '',
+            '#required' => $field['required'] ? $field['required'] : FALSE,
+            '#maxlength' => 255,
+            '#weight' => $field['widget']['weight'],
+            '#size' => isset($field['widget']['size']) ? $field['widget']['size'] : 20,
           );
         }
       }
       else {
         $form[$field['field_name']][0]['value'] = array(
           '#type' => 'textfield',
-          '#title' => t($field['widget']['label']),
+          '#title' => $field['widget']['label'],
           '#default_value' => isset($node_field[0]['value']) ? $node_field[0]['value'] : '',
-          '#required' => $field['required'],
-          '#description' => $field['widget']['description'],
+          '#required' => $field['required'] ? $field['required'] : FALSE,
           '#maxlength' => 255,
+          '#weight' => $field['widget']['weight'],
+          '#size' => isset($field['widget']['size']) ? $field['widget']['size'] : 20,
         );
       }
+      
       return $form;
     
     case 'process form values':
