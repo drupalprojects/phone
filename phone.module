@@ -22,52 +22,60 @@ function phone_field_info() {
 /**
  * Implementation of hook_field_settings().
  */
-function phone_field_settings($op, $field) {
-  switch ($op) {    
-    case 'form':
-    
-    case 'validate':    
-      break; //do nothing 
-
-    case 'save':
-      return array();
-      
+function phone_field_settings($op, $field) {      
+  switch ($op) {      
     case 'database columns':
       if ($field['type'] == 'fr_phone'){ 
-      	return array(
-      	  'value' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'sortable' => TRUE),      	  
-      	  
+      	$columns = array(
+        	'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       	);
       }
       if ($field['type'] == 'ca_phone'){ 
-         return array(
-      	  'value' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'sortable' => TRUE),      	  
-          );
+      	$columns = array(
+        	'value' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      	);
       }      
-      return $columns;
-      
-    case 'filters':
-      return array(
-        'default' => array(
-          'operator' => 'views_handler_operator_like',
-          'handler' => 'views_handler_filter_like',
-        ),
-      );       
+      return $columns;     
   }
 }
 
 /**
  * Implementation of hook_field().
  */
-function phone_field($op, &$node, $field, &$items, $teaser, $page) {
+function phone_field($op, &$node, $field, &$node_field, $teaser, $page) {
   switch ($op) {
-    case 'validate':
-      if (!empty($widget['size']) && (!is_numeric($widget['size']) || intval($widget['size']) != $widget['size'] || $widget['size'] <= 0)) {
-        form_set_error('size', t('"Size" must be a positive integer.'));
+    case 'view':
+      foreach ($node_field as $delta => $item) {
+        //$node_field[$delta]['view'] = zipcode_field_view_item($field, $item);
+        $node_field[$delta]['view'] = content_format($field, $item, 'default', $node);
       }
-      break; 
+      return theme('field', $node, $field, $node_field, $teaser, $page); 
   }
 }
+
+/**
+ * Implementation of hook_field_view_item().
+ *
+ */
+/*
+function phone_field_view_item($field, $node_field_item) {
+    $phonenumber =  check_plain($node_field_item['value']);
+    return $phonenumber;
+}
+*/
+ 
+/**
+ *Implementation of hook_field_formatter_info
+ *
+ */
+function phone_field_formatter_info() {
+  return array(
+    'default' => array(
+      'label' => 'Default',
+      'field types' => array('fr_phone', 'ca_phone'),
+    ),
+  );
+ } 
  
 /**
 * Implementation of hook_field_formatter().
@@ -80,7 +88,7 @@ function phone_field_formatter($field, $item, $formatter, $node) {
     $text = check_markup($item['value'], $item['format'], is_null($node) || isset($node->in_preview));
   }
   else {
-     $text = check_plain($item['value']);
+    $text = check_plain($item['value']);
   }
   return $text;
 }
@@ -91,10 +99,25 @@ function phone_field_formatter($field, $item, $formatter, $node) {
 function phone_widget_info() {
   return array(
     'phone' => array(
-      'label' => 'Text Field',
+      'label' => t('Textfield'),
       'field types' => array('fr_phone', 'ca_phone'),
     ),
   );
+}
+
+/**
+ * Implementation of hook_widget_settings().
+ */
+function phone_widget_settings($op, $widget) {
+  switch ($op) {
+    case 'form':
+
+    case 'validate':
+      break; //do nothing 
+
+    case 'save':
+      return array();
+  }
 }
 
 /**
@@ -109,40 +132,31 @@ function phone_widget($op, &$node, $field, &$node_field) {
       
       if ($field['multiple']) {
         $form[$field['field_name']]['#type'] = 'fieldset';
-        $form[$field['field_name']]['#description'] = $field['widget']['description'];
-        $delta = 0;
-        foreach ($node_field as $data) {
-          if (isset($data['value'])) {
-            $form[$field['field_name']][$delta]['value'] = array(
-              '#type' => 'textfield',
-              '#title' => ($delta == 0) ? t($field['widget']['label']) : '',
-              '#default_value' => $data['value'],
-              '#required' => ($delta == 0) ? $field['required'] : FALSE,
-              '#maxlength' => 25,
-            );
-            $delta++;
-          }
-        }        
-        foreach (range($delta, $delta + 2) as $delta) {
+        $form[$field['field_name']]['#title'] = t($field['widget']['label']);
+        foreach (range(0,2) as $delta) {
           $form[$field['field_name']][$delta]['value'] = array(
             '#type' => 'textfield',
-            '#title' => ($delta == 0) ? t($field['widget']['label']) : '',
-            '#default_value' => '',
-            '#required' => ($delta == 0) ? $field['required'] : FALSE,
-            '#maxlength' => 25,
+            '#title' => '',
+            '#default_value' => isset($node_field[$delta]['value']) ? $node_field[$delta]['value'] : '',
+            '#required' => $field['required'] ? $field['required'] : FALSE,
+            '#maxlength' => 255,
+            '#weight' => $field['widget']['weight'],
+            '#size' => isset($field['widget']['size']) ? $field['widget']['size'] : 20,
           );
         }
-      }     
+      }        
       else {
         $form[$field['field_name']][0]['value'] = array(
           '#type' => 'textfield',
-          '#title' => t($field['widget']['label']),
+          '#title' => $field['widget']['label'],
           '#default_value' => isset($node_field[0]['value']) ? $node_field[0]['value'] : '',
-          '#required' => $field['required'],
-          '#description' => $field['widget']['description'],
+          '#required' => $field['required'] ? $field['required'] : FALSE,
           '#maxlength' => 255,
+          '#weight' => $field['widget']['weight'],
+          '#size' => isset($field['widget']['size']) ? $field['widget']['size'] : 20,
         );
-      }      
+      }
+               
       return $form;
     
     case 'process form values':
@@ -153,11 +167,10 @@ function phone_widget($op, &$node, $field, &$node_field) {
 	      { 
     	        if ($field['type'] == 'fr_phone') { 
     	          $countrycode = '33'; //33 for France 
-	  	  $node_field[$delta]['value'] = format_fr_phone_number($item['value'], $countrycode);
+	  	  $node_field[0]['value'] = format_fr_phone_number($node_field[0]['value'], $countrycode);
 	        }
     	        if ($field['type'] == 'ca_phone') { 
-    	          $countrycode = '1'; //1 for Us and Canada 
-	          $node_field[$delta]['value'] = format_ca_phone_number($item['value'], $countrycode);
+	          $node_field[0]['value'] = format_ca_phone_number($node_field[0]['value']);
 	        }
 	      }
 	    }
