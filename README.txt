@@ -1,6 +1,6 @@
 $Id$
 
-Copyright 2006 http://www.arvoriad.com
+Copyright 2007 http://www.arvoriad.com
 
 
 Description
@@ -9,8 +9,10 @@ This module provides a phone field type for CCK.
 
 Features:
 ---------
-* Validation of phone numbers : support for with French, US and Canadian phone numbers 
+* Validation of phone numbers : support of French, British, Italian, US and Canadian phone numbers 
 * Formating of phone numbers 
+* Option for internationalization phone numbers  
+* IPhone support 
 
 Prerequisites
 -------------
