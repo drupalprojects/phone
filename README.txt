@@ -9,7 +9,7 @@ This module provides a phone field type for CCK.
 
 Features:
 ---------
-* Validation of phone numbers : support of French, British, Italian, US and Canadian phone numbers 
+* Validation of phone numbers : support of French, British, Italian, Russian, US and Canadian phone numbers 
 * Formating of phone numbers 
 * Option for internationalization phone numbers  
 * IPhone support 
