@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Verifies that $phonenumber is a valid ten-digit Russian phone number

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Verifies that $phonenumber is a valid nine-digit Spanish phone number

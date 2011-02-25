@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Verification for French Phone Numbers.  

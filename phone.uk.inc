@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Verifies that $phonenumber is a valid eleven-digit United Kingdom phone number
