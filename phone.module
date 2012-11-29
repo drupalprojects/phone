@@ -37,7 +37,7 @@ function phone_field_info() {
     'pa_phone' => array('label' => t('Phone Numbers - Panama')),
     'gb_phone' => array('label' => t('Phone Numbers - Great Britain - United Kingdom')),
     'ru_phone' => array('label' => t('Phone Numbers - Russia')),
-    'ua_phone' => array('label' => t('Phone Numbers - Ukraine - in Kiev')),    
+    'ua_phone' => array('label' => t('Phone Numbers - Ukraine')),
     'es_phone' => array('label' => t('Phone Numbers - Spain')),
     'au_phone' => array('label' => t('Phone Numbers - Australia')),
     'cs_phone' => array('label' => t('Phone Numbers - Czech Republic')),
