@@ -144,7 +144,8 @@ function valid_au_phone_number($phonenumber) {
   $rules[] = array("448", 9, 9);
   $rules[] = array("449", 9, 9);
   $rules[] = array("449", 9, 9);  
-  $rules[] = array("450 ", 9, 9);
+  $rules[] = array("450", 9, 9);
+  $rules[] = array("452", 9, 9);
   $rules[] = array("451", 9, 9);
   $rules[] = array("457", 9, 9);
   $rules[] = array("458", 9, 9);
