@@ -310,7 +310,7 @@ function phone_field($op, &$node, $field, &$node_field, $teaser, $page) {
             form_set_error($field['field_name'], t('"%value" is not a valid New Zealand phone number!<br>New Zealand phone numbers should contain only numbers, spaces, brackets and "-". They should look like 04 123 4567 or can optionally omit the leading 0 and have a prefix of "+64".', array('%value' => $item['value'])));
           }
           if ($field['type'] == 'br_phone' && !valid_phone_number('br', $item['value'])) {
-            form_set_error($field['field_name'], t('"%value" is not a valid Brazilian phone number!<br>Brazilian phone numbers should contain only numbers and spaces and - and be like 099 9999-9999 or 99 9999-9999 with an optional prefix of "+55".', array('%value' => $item['value'])));
+            form_set_error($field['field_name'], t('"%value" is not a valid Brazilian phone number!<br>Brazilian phone numbers should contain only numbers and spaces and - and be like 099 9999-9999, 99 9999-9999 or 99 99999-9999 with an optional prefix of "+55".', array('%value' => $item['value'])));
           }
           if ($field['type'] == 'cl_phone' && !valid_phone_number('cl', $item['value'])) {
             form_set_error($field['field_name'], t('"%value" is not a valid Chilian phone number!<br>Chilean phone numbers should ...', array('%value' => $item['value'])));
